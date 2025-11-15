@@ -5,6 +5,9 @@ import (
 	"avitoTestTask/internal/storage"
 	"log/slog"
 	"os"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 const (
@@ -20,15 +23,17 @@ func main() {
 
 	log.Info("starting avitoTestTask", slog.String("env", cfg.Env))
 	log.Debug("debug messages are enabled")
+	log.Error("error messages are enabled")
 
 	teamStorage, err := storage.NewTeamStorage(cfg.StoragePath)
+	userStorage, err := storage.NewUserStorage(cfg.StoragePath)
+	prStorage, err := storage.NewPullRequestStorage(cfg.StoragePath)
+	reviewerStorage, err := storage.NewReviewerStorage(cfg.StoragePath)
 
 	if err != nil {
 		log.Error("error creating storage", err)
 		os.Exit(1)
 	}
-
-	_ = teamStorage
 
 }
 
