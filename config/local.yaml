@@ -1,0 +1,6 @@
+env: "local" #local, dev, prod
+storage_path: "jdbc:postgresql://localhost:5432/app"
+http_server:
+  address: "localhost:8080"
+  timeout: 300ms
+  idle_timeout: 60s
