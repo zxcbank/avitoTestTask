@@ -125,7 +125,7 @@ curl -X POST http://localhost:8080/users/setIsActive \
   }'
 ```
 
-## 🔄 Pull Requests Endpoints
+## Pull Requests Endpoints
 
 ### 9. Создание PR (успешный случай)
 ```
@@ -248,7 +248,7 @@ curl "http://localhost:8080/users/getReview?user_id=u2"
 curl "http://localhost:8080/users/getReview?user_id=u999"
 ```
 
-## 🩺 Health Check
+## Health Check
 
 ### 22. Проверка здоровья сервиса
 ```
