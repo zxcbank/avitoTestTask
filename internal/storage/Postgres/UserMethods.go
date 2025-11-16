@@ -7,7 +7,7 @@ import (
 )
 
 func (s *PostgresStorage) SetUserActive(userID string, isActive bool) (*models.User, error) {
-	const op = "storage.postgres.SetUserActive"
+	const op = "internal.storage.Postgres.SetUserActive"
 
 	if userID == "" {
 		return nil, fmt.Errorf("%s: %w", op, models.ErrEmptyUserId)
@@ -36,11 +36,12 @@ func (s *PostgresStorage) SetUserActive(userID string, isActive bool) (*models.U
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
+	s.Log.Info(op, " : ", "setUserActive success", user)
 	return &user, nil
 }
 
 func (s *PostgresStorage) GetUserReviewPRs(userID string) ([]*models.PullRequest, error) {
-	const op = "storage.postgres.GetUserReviewPRs"
+	const op = "internal.storage.Postgres.GetUserReviewPRs"
 
 	if userID == "" {
 		return nil, fmt.Errorf("%s: %w", op, models.ErrEmptyUserId)
@@ -102,11 +103,12 @@ func (s *PostgresStorage) GetUserReviewPRs(userID string) ([]*models.PullRequest
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
+	s.Log.Info(op, " : ", "getUserReviewPRs success", pullRequests)
 	return pullRequests, nil
 }
 
 func (s *PostgresStorage) getPRReviewers(prID string) ([]string, error) {
-	const op = "storage.postgres.getPRReviewers"
+	const op = "internal.storage.Postgres.getPRReviewers"
 
 	stmt, err := s.DB.Prepare(`
         SELECT user_id FROM pull_request_reviewers WHERE pull_request_id = $1
@@ -136,11 +138,12 @@ func (s *PostgresStorage) getPRReviewers(prID string) ([]string, error) {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
+	s.Log.Info(op, " : ", "getPRReviewers success", reviewers)
 	return reviewers, nil
 }
 
 func (s *PostgresStorage) UserExists(userID string) (bool, error) {
-	const op = "storage.postgres.UserExists"
+	const op = "internal.storage.Postgres.UserExists"
 
 	stmt, err := s.DB.Prepare("SELECT EXISTS(SELECT 1 FROM users WHERE user_id = $1)")
 	if err != nil {
@@ -154,5 +157,6 @@ func (s *PostgresStorage) UserExists(userID string) (bool, error) {
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
 
+	s.Log.Info(op, " : ", "userExists success", exists)
 	return exists, nil
 }

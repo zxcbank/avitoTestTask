@@ -25,7 +25,7 @@ func CreateTeamService(storage teamStorage, log *slog.Logger) TeamService {
 }
 
 func (s *TeamService) CreateTeam(team *models.Team) error {
-	const op = "internal.service.CreateTeam"
+	const op = "internal.service.teamService.CreateTeam"
 	if team == nil {
 		s.log.Error(op, " : ", "Team is nil")
 		return errors.New("nil team")
@@ -70,7 +70,7 @@ func (s *TeamService) CreateTeam(team *models.Team) error {
 }
 
 func (s *TeamService) GetTeam(teamName string) (*models.Team, error) {
-	const op = "internal.service.GetTeam"
+	const op = "internal.service.teamService.GetTeam"
 
 	if teamName == "" {
 		s.log.Error(op, " : ", "teamName is empty")

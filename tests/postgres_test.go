@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"log/slog"
+	"os"
 	"testing"
 	"time"
 
@@ -24,10 +26,15 @@ type PostgresStorageTestSuite struct {
 	storage   *Postgres.PostgresStorage
 	container testcontainers.Container
 	ctx       context.Context
+	logger    *slog.Logger
 }
 
 func (suite *PostgresStorageTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
+
+	suite.logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
 
 	container, err := postgres.Run(suite.ctx,
 		"postgres:15-alpine",
@@ -62,7 +69,7 @@ func (suite *PostgresStorageTestSuite) SetupSuite() {
 	}
 
 	suite.db = dataBase
-	suite.storage = &Postgres.PostgresStorage{DB: dataBase}
+	suite.storage = &Postgres.PostgresStorage{DB: dataBase, Log: suite.logger}
 
 	err = suite.createTables()
 	if err != nil {

@@ -25,7 +25,7 @@ func CreatePullRequestService(storage pullRequestStorage, log *slog.Logger) Pull
 }
 
 func (s *PullRequestService) CreatePullRequest(PullRequestId, PullRequestName, AuthorID string) (*models.PullRequest, error) {
-	const op = "internal.service.CreatePullRequest"
+	const op = "internal.service.pullRequestService.CreatePullRequest"
 
 	if PullRequestId == "" {
 		s.log.Error(op, " : ", "PullRequest ID is empty")
@@ -76,7 +76,7 @@ func (s *PullRequestService) CreatePullRequest(PullRequestId, PullRequestName, A
 }
 
 func (s *PullRequestService) GetPullRequest(PullRequestName string) (*models.PullRequest, error) {
-	const op = "internal.service.GetPullRequest"
+	const op = "internal.service.pullRequestService.GetPullRequest"
 
 	if PullRequestName == "" {
 		s.log.Error(op, " : ", "PullRequest name is empty")
@@ -123,7 +123,7 @@ func (s *PullRequestService) GetPullRequest(PullRequestName string) (*models.Pul
 }
 
 func (s *PullRequestService) MergePullRequest(PullRequestID string) (*models.PullRequest, error) {
-	const op = "internal.service.MergePullRequest"
+	const op = "internal.service.pullRequestService.MergePullRequest"
 
 	if PullRequestID == "" {
 		s.log.Error(op, " : ", "PullRequest ID is empty")
@@ -163,7 +163,7 @@ func (s *PullRequestService) MergePullRequest(PullRequestID string) (*models.Pul
 }
 
 func (s *PullRequestService) ReassignReviewer(PullRequestID, OldUserId string) (*models.Reassign, error) {
-	const op = "internal.service.ReassignReviewer"
+	const op = "internal.service.pullRequestService.ReassignReviewer"
 
 	if PullRequestID == "" {
 		s.log.Error(op, " : ", "PullRequest ID is empty")

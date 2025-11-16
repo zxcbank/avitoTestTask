@@ -9,7 +9,7 @@ import (
 )
 
 func (s *PostgresStorage) CreateTeam(team *models.Team) error {
-	const op = "storage.postgres.CreateTeam"
+	const op = "internal.storage.Postgres.CreateTeam"
 
 	if team.Name == "" {
 		return fmt.Errorf("%s: %w", op, models.ErrEmptyTeamName)
@@ -54,11 +54,12 @@ func (s *PostgresStorage) CreateTeam(team *models.Team) error {
 			}
 		}
 	}
+	s.Log.Info(op, " : ", "team created", team)
 	return nil
 }
 
 func (s *PostgresStorage) GetTeam(teamName string) (*models.Team, error) {
-	const op = "storage.postgres.GetTeam"
+	const op = "internal.storage.Postgres.GetTeam"
 
 	if teamName == "" {
 		return nil, models.ErrEmptyTeamName
@@ -98,7 +99,7 @@ func (s *PostgresStorage) GetTeam(teamName string) (*models.Team, error) {
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
-
+	s.Log.Info(op, " : ", "team found", members)
 	return &models.Team{
 		Name:    teamName,
 		Members: members,
@@ -106,7 +107,7 @@ func (s *PostgresStorage) GetTeam(teamName string) (*models.Team, error) {
 }
 
 func (s *PostgresStorage) TeamExists(teamName string) (bool, error) {
-	const op = "storage.postgres.TeamExists"
+	const op = "internal.storage.Postgres.TeamExists"
 
 	if teamName == "" {
 		return false, models.ErrEmptyTeamName
@@ -124,5 +125,6 @@ func (s *PostgresStorage) TeamExists(teamName string) (bool, error) {
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
 
+	s.Log.Info(op, " : ", "team exists : ", teamName)
 	return exists, nil
 }

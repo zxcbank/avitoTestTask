@@ -22,6 +22,8 @@ func (h *HealthController) EnableController() {
 }
 
 func (h *HealthController) HealthCheck(c *gin.Context) {
+	const op = "internal.http-server.controllers.healthController.HealthCheck"
+	h.log.Info(op, " : ", " health check success")
 	c.JSON(http.StatusOK, gin.H{
 		"status":    "OK",
 		"timestamp": time.Now().Format(time.RFC3339),

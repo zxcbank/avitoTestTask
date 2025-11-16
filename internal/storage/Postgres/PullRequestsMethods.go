@@ -10,7 +10,7 @@ import (
 )
 
 func (s *PostgresStorage) CreatePullRequest(PullRequestId, PullRequestName, AuthorID string) (models.PullRequest, error) {
-	const op = "storage.postgres.CreatePullRequest"
+	const op = "internal.storage.Postgres.CreatePullRequest"
 
 	if PullRequestId == "" {
 		return models.PullRequest{}, fmt.Errorf("%s: %w", op, models.ErrEmptyPullRequestId)
@@ -87,11 +87,12 @@ func (s *PostgresStorage) CreatePullRequest(PullRequestId, PullRequestName, Auth
 		return models.PullRequest{}, fmt.Errorf("%s: %w", op, err)
 	}
 
+	s.Log.Info(op, " : ", "created pullrequest", pr)
 	return pr, nil
 }
 
 func (s *PostgresStorage) GetPullRequest(PullRequestID string) (*models.PullRequest, error) {
-	const op = "storage.postgres.GetPullRequest"
+	const op = "internal.storage.Postgres.GetPullRequest"
 
 	if PullRequestID == "" {
 		return nil, fmt.Errorf("%s: %w", op, models.ErrEmptyPullRequestId)
@@ -140,11 +141,12 @@ func (s *PostgresStorage) GetPullRequest(PullRequestID string) (*models.PullRequ
 	}
 	pr.AssignedReviewers = reviewers
 
+	s.Log.Info(op, " : ", "get pull request", pr)
 	return &pr, nil
 }
 
 func (s *PostgresStorage) MergePullRequest(PullRequestID string) (*models.PullRequest, error) {
-	const op = "storage.postgres.MergePullRequest"
+	const op = "internal.storage.Postgres.MergePullRequest"
 
 	if PullRequestID == "" {
 		return nil, fmt.Errorf("%s: %w", op, models.ErrEmptyPullRequestId)
@@ -223,11 +225,12 @@ func (s *PostgresStorage) MergePullRequest(PullRequestID string) (*models.PullRe
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
+	s.Log.Info(op, " : ", "merged pull request", pr)
 	return &pr, nil
 }
 
 func (s *PostgresStorage) ReassignReviewer(PullRequestID, OldUserId string) (models.Reassign, error) {
-	const op = "storage.postgres.ReassignReviewer"
+	const op = "internal.storage.Postgres.ReassignReviewer"
 
 	if PullRequestID == "" {
 		return models.Reassign{}, fmt.Errorf("%s: %w", op, models.ErrEmptyPullRequestId)
@@ -341,6 +344,7 @@ func (s *PostgresStorage) ReassignReviewer(PullRequestID, OldUserId string) (mod
 		return models.Reassign{}, fmt.Errorf("%s: %w", op, err)
 	}
 
+	s.Log.Info(op, " : ", "updated PR success", updatedPR)
 	return models.Reassign{
 		PR:            *updatedPR,
 		NewReviewerID: newReviewerID,
@@ -348,7 +352,7 @@ func (s *PostgresStorage) ReassignReviewer(PullRequestID, OldUserId string) (mod
 }
 
 func (s *PostgresStorage) PRExists(prID string) (bool, error) {
-	const op = "storage.postgres.PRExists"
+	const op = "internal.storage.Postgres.PRExists"
 
 	stmt, err := s.DB.Prepare("SELECT EXISTS(SELECT 1 FROM pull_requests WHERE pull_request_id = $1)")
 	if err != nil {
@@ -362,11 +366,12 @@ func (s *PostgresStorage) PRExists(prID string) (bool, error) {
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
 
+	s.Log.Info(op, " : ", "PR exists success ", prID)
 	return exists, nil
 }
 
 func (s *PostgresStorage) assignReviewers(tx *sql.Tx, authorID, prID string) ([]string, error) {
-	const op = "storage.postgres.assignReviewers"
+	const op = "internal.storage.Postgres.assignReviewers"
 
 	var authorTeam string
 	teamStmt, err := tx.Prepare("SELECT team_name FROM users WHERE user_id = $1")
@@ -423,5 +428,6 @@ func (s *PostgresStorage) assignReviewers(tx *sql.Tx, authorID, prID string) ([]
 		}
 	}
 
+	s.Log.Info(op, " : ", "assign reviewers success", reviewers)
 	return reviewers, nil
 }

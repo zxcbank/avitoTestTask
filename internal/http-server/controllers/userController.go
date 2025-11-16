@@ -30,7 +30,7 @@ func (h *UserController) EnableController() {
 }
 
 func (h *UserController) UserSetIsActive(c *gin.Context) {
-	const op = "handler.UserSetIsActive"
+	const op = "internal.http-server.controllers.userController.UserSetIsActive"
 
 	var request struct {
 		UserID   string `json:"user_id" binding:"required"`
@@ -51,6 +51,7 @@ func (h *UserController) UserSetIsActive(c *gin.Context) {
 	user, err := h.service.SetUserActive(request.UserID, request.IsActive)
 	if err != nil {
 		if errors.Is(err, models.ErrUserNotFound) {
+			h.log.Error(op, " : ", err.Error())
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": map[string]interface{}{
 					"code":    "NOT_FOUND",
@@ -68,17 +69,18 @@ func (h *UserController) UserSetIsActive(c *gin.Context) {
 		})
 		return
 	}
-
+	h.log.Info(op, " : ", " UserSerIsActive success", user)
 	c.JSON(http.StatusOK, gin.H{
 		"user": user,
 	})
 }
 
 func (h *UserController) GetUserReviews(c *gin.Context) {
-	const op = "handler.GetUserReviews"
+	const op = "internal.http-server.controllers.userController.GetUserReviews"
 
 	userID := c.Query("user_id")
 	if userID == "" {
+		h.log.Info(op, " : ", models.ErrEmptyUserId.Error())
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": map[string]interface{}{
 				"code":    "INVALID_REQUEST",
@@ -91,6 +93,7 @@ func (h *UserController) GetUserReviews(c *gin.Context) {
 	pullRequests, err := h.service.GetUserReviewPRs(userID)
 	if err != nil {
 		if errors.Is(err, models.ErrUserNotFound) {
+			h.log.Info(op, " : ", models.ErrUserNotFound.Error())
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": map[string]interface{}{
 					"code":    "NOT_FOUND",
@@ -108,7 +111,7 @@ func (h *UserController) GetUserReviews(c *gin.Context) {
 		})
 		return
 	}
-
+	h.log.Info(op, " : GetUserReviews success : ", userID, pullRequests)
 	c.JSON(http.StatusOK, gin.H{
 		"user_id":       userID,
 		"pull_requests": pullRequests,

@@ -24,7 +24,7 @@ func CreateUserService(storage userStorage, log *slog.Logger) UserService {
 }
 
 func (s *UserService) SetUserActive(userId string, isActive bool) (*models.User, error) {
-	const op = "internal.service.SetUserActive"
+	const op = "internal.service.userService.SetUserActive"
 
 	if userId == "" {
 		s.log.Error(op, " : ", "User ID is empty")
@@ -64,7 +64,7 @@ func (s *UserService) SetUserActive(userId string, isActive bool) (*models.User,
 }
 
 func (s *UserService) GetUserReviewPRs(userId string) ([]*models.PullRequest, error) {
-	const op = "internal.service.GetUserReviewPRs"
+	const op = "internal.service.userService.GetUserReviewPRs"
 
 	if userId == "" {
 		s.log.Error(op, " : ", "User ID is empty")

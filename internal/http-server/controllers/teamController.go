@@ -30,7 +30,7 @@ func (h *TeamController) EnableController() {
 }
 
 func (h *TeamController) CreateTeam(c *gin.Context) {
-	const op = "handler.CreateTeam"
+	const op = "internal.http-server.controllers.teamController.CreateTeam"
 
 	var request models.Team
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -74,10 +74,11 @@ func (h *TeamController) CreateTeam(c *gin.Context) {
 }
 
 func (h *TeamController) TeamGet(c *gin.Context) {
-	const op = "handler.TeamGet"
+	const op = "internal.http-server.controllers.teamController.TeamGet"
 
 	teamName := c.Query("team_name")
 	if teamName == "" {
+		h.log.Error(op, " : ", models.ErrEmptyTeamName)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": map[string]interface{}{
 				"code":    "INVALID_REQUEST",
@@ -90,6 +91,7 @@ func (h *TeamController) TeamGet(c *gin.Context) {
 	team, err := h.service.GetTeam(teamName)
 	if err != nil {
 		if errors.Is(err, models.ErrTeamNotFound) {
+			h.log.Error(op, " : ", models.ErrTeamNotFound)
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": map[string]interface{}{
 					"code":    "NOT_FOUND",
@@ -108,6 +110,6 @@ func (h *TeamController) TeamGet(c *gin.Context) {
 		return
 	}
 
-	h.log.Info(op, " : ", "team found", team.Name)
+	h.log.Info(op, " : ", "team found ", team.Name)
 	c.JSON(http.StatusOK, team)
 }

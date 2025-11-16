@@ -33,7 +33,7 @@ func (h *PullRequestController) EnableController() {
 }
 
 func (h *PullRequestController) CreatePullRequest(c *gin.Context) {
-	const op = "handler.CreatePullRequest"
+	const op = "internal.http-server.controllers.pullRequestController.CreatePullRequest"
 
 	var request struct {
 		PullRequestID   string `json:"pull_request_id" binding:"required"`
@@ -56,6 +56,7 @@ func (h *PullRequestController) CreatePullRequest(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, models.ErrUserNotFound) || errors.Is(err, models.ErrTeamNotFound):
+			h.log.Error(op, " : ", err.Error())
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": map[string]interface{}{
 					"code":    "NOT_FOUND",
@@ -63,6 +64,7 @@ func (h *PullRequestController) CreatePullRequest(c *gin.Context) {
 				},
 			})
 		case errors.Is(err, models.ErrPRExists):
+			h.log.Error(op, " : ", err.Error())
 			c.JSON(http.StatusConflict, gin.H{
 				"error": map[string]interface{}{
 					"code":    "PR_EXISTS",
@@ -80,14 +82,14 @@ func (h *PullRequestController) CreatePullRequest(c *gin.Context) {
 		}
 		return
 	}
-
+	h.log.Info(op, " : ", "Create pull request success: ", pr)
 	c.JSON(http.StatusCreated, gin.H{
 		"pr": pr,
 	})
 }
 
 func (h *PullRequestController) MergePullRequest(c *gin.Context) {
-	const op = "handler.MergePullRequest"
+	const op = "internal.http-server.controllers.pullRequestController.MergePullRequest"
 
 	var request struct {
 		PullRequestID string `json:"pull_request_id" binding:"required"`
@@ -107,6 +109,7 @@ func (h *PullRequestController) MergePullRequest(c *gin.Context) {
 	pr, err := h.service.MergePullRequest(request.PullRequestID)
 	if err != nil {
 		if errors.Is(err, models.ErrPRNotFound) {
+			h.log.Error(op, " : ", err.Error())
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": map[string]interface{}{
 					"code":    "NOT_FOUND",
@@ -124,14 +127,14 @@ func (h *PullRequestController) MergePullRequest(c *gin.Context) {
 		})
 		return
 	}
-
+	h.log.Info(op, " : Merged success", pr)
 	c.JSON(http.StatusOK, gin.H{
 		"pr": pr,
 	})
 }
 
 func (h *PullRequestController) ReassignPullRequest(c *gin.Context) {
-	const op = "handler.ReassignPullRequest"
+	const op = "internal.http-server.controllers.pullRequestController.ReassignPullRequest"
 
 	var request struct {
 		PullRequestID string `json:"pull_request_id" binding:"required"`
@@ -154,6 +157,7 @@ func (h *PullRequestController) ReassignPullRequest(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, models.ErrPRNotFound) || errors.Is(err, models.ErrUserNotFound):
+			h.log.Error(op, " : ", err.Error())
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": map[string]interface{}{
 					"code":    "NOT_FOUND",
@@ -161,6 +165,7 @@ func (h *PullRequestController) ReassignPullRequest(c *gin.Context) {
 				},
 			})
 		case errors.Is(err, models.ErrPRMerged):
+			h.log.Error(op, " : ", err.Error())
 			c.JSON(http.StatusConflict, gin.H{
 				"error": map[string]interface{}{
 					"code":    "PR_MERGED",
@@ -168,6 +173,7 @@ func (h *PullRequestController) ReassignPullRequest(c *gin.Context) {
 				},
 			})
 		case errors.Is(err, models.ErrNotAssigned):
+			h.log.Error(op, " : ", err.Error())
 			c.JSON(http.StatusConflict, gin.H{
 				"error": map[string]interface{}{
 					"code":    "NOT_ASSIGNED",
@@ -175,6 +181,7 @@ func (h *PullRequestController) ReassignPullRequest(c *gin.Context) {
 				},
 			})
 		case errors.Is(err, models.ErrNoCandidate):
+			h.log.Error(op, " : ", err.Error())
 			c.JSON(http.StatusConflict, gin.H{
 				"error": map[string]interface{}{
 					"code":    "NO_CANDIDATE",
@@ -192,7 +199,7 @@ func (h *PullRequestController) ReassignPullRequest(c *gin.Context) {
 		}
 		return
 	}
-
+	h.log.Info(op, " : ", " reassigned success", pr, replacedBy)
 	c.JSON(http.StatusOK, gin.H{
 		"pr":          pr,
 		"replaced_by": replacedBy,
