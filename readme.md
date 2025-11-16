@@ -4,9 +4,17 @@
 docker compose build
 docker compose up
 ```
+
+# Unit-тесты
+```
+cd tests 
+go test -v
+```
+
 # Ручное тетсирование Эндпоинтов
 
 Вот полный набор тестовых запросов для тестирования всего API:
+
 
 ## Teams Endpoints
 
