@@ -5,8 +5,13 @@ import (
 	controllers "avitoTestTask/internal/http-server/controllers"
 	"avitoTestTask/internal/service"
 	dao "avitoTestTask/internal/storage/Postgres"
+	"context"
 	"log/slog"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,11 +32,19 @@ func main() {
 
 	// делаем слой для работы с БД
 	Storage, err := dao.NewPostgresStorage(cfg.StoragePath, log)
-
 	if err != nil {
 		log.Error("error creating storage", err)
 		os.Exit(1)
 	}
+	defer func() {
+		if Storage != nil && Storage.DB != nil {
+			if err := Storage.DB.Close(); err != nil {
+				log.Error("failed to close database connection", slog.Any("error", err))
+			} else {
+				log.Info("database connection closed")
+			}
+		}
+	}()
 
 	// делаем сервисный слой
 	teamService := service.CreateTeamService(Storage, log)
@@ -51,9 +64,43 @@ func main() {
 	pullRequestHandler.EnableController()
 	healthHandler.EnableController()
 
-	// Запускаем роутер
-	router.Run()
+	server := &http.Server{
+		Addr:        cfg.Port,
+		Handler:     router,
+		IdleTimeout: cfg.IdleTimeout * time.Second,
+	}
 
+	serverErrors := make(chan error, 1)
+
+	go func() {
+		log.Info("starting HTTP server", slog.String("address", server.Addr))
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			serverErrors <- err
+		}
+	}()
+
+	osSignals := make(chan os.Signal, 1)
+	signal.Notify(osSignals, os.Interrupt, syscall.SIGTERM)
+
+	select {
+	case err := <-serverErrors:
+		log.Error("server error", slog.Any("error", err))
+
+	case sig := <-osSignals:
+		log.Info("received shutdown signal", slog.String("signal", sig.String()))
+
+		ctx, cancel := context.WithTimeout(context.Background(), 3600*time.Second)
+		defer cancel()
+
+		if err := server.Shutdown(ctx); err != nil {
+			log.Error("graceful shutdown failed", slog.Any("error", err))
+			if err := server.Close(); err != nil {
+				log.Error("forced shutdown failed", slog.Any("error", err))
+			}
+		}
+	}
+
+	log.Info("application stopped")
 }
 
 func setupLogger(env string) *slog.Logger {

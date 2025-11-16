@@ -15,9 +15,10 @@ type Config struct {
 }
 
 type HTTPServer struct {
-	Address     string        `yaml:"address" env-required:"true"`
-	Timeout     time.Duration `yaml:"timeout" env-default:"300ms"`
-	IdleTimeout time.Duration `yaml:"idle_timeout" env-default:"60s"`
+	Port                    string        `yaml:"port" env-required:"true"`
+	Timeout                 time.Duration `yaml:"timeout" env-default:"300ms"`
+	IdleTimeout             time.Duration `yaml:"idle_timeout" env-default:"60s"`
+	GracefulShutdownTimeOut time.Duration `yaml:"graceful_shutdown_time_out" env-default:"3600s"`
 }
 
 func MustLoad() *Config {
