@@ -16,10 +16,10 @@ type PullRequestController struct {
 }
 
 type PullRequestService interface {
-	CreatePullRequest(PullRequestId, PullRequestName, AuthorID string) (models.PullRequest, error)
-	GetPullRequest(PullRequestName string) (*models.PullRequest, error)
+	CreatePullRequest(PullRequestId, PullRequestName, AuthorID string) (*models.PullRequest, error)
+	GetPullRequest(PullRequestID string) (*models.PullRequest, error)
 	MergePullRequest(PullRequestID string) (*models.PullRequest, error)
-	ReassignReviewer(PullRequestID, OldUserId string) (models.Reassign, error)
+	ReassignReviewer(PullRequestID, OldUserId string) (*models.Reassign, error)
 }
 
 func CreatePullRequestController(service PullRequestService, router *gin.Engine, log *slog.Logger) PullRequestController {
@@ -43,7 +43,12 @@ func (h *PullRequestController) CreatePullRequest(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		h.log.Error(op, " : ", err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"INVALID_REQUEST": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": map[string]interface{}{
+				"code":    "INVALID_REQUEST",
+				"message": "Invalid request body",
+			},
+		})
 		return
 	}
 
@@ -51,12 +56,27 @@ func (h *PullRequestController) CreatePullRequest(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, models.ErrUserNotFound) || errors.Is(err, models.ErrTeamNotFound):
-			c.JSON(http.StatusNotFound, gin.H{"NOT_FOUND": "Author/team not found"})
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": map[string]interface{}{
+					"code":    "NOT_FOUND",
+					"message": "Author/team not found",
+				},
+			})
 		case errors.Is(err, models.ErrPRExists):
-			c.JSON(http.StatusConflict, gin.H{"PR_EXISTS": "PR id already exists"})
+			c.JSON(http.StatusConflict, gin.H{
+				"error": map[string]interface{}{
+					"code":    "PR_EXISTS",
+					"message": "PR id already exists",
+				},
+			})
 		default:
 			h.log.Error(op, " : ", err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"INTERNAL_ERROR": "Internal server error"})
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": map[string]interface{}{
+					"code":    "INTERNAL_ERROR",
+					"message": "Internal server error",
+				},
+			})
 		}
 		return
 	}
@@ -75,18 +95,33 @@ func (h *PullRequestController) MergePullRequest(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		h.log.Error(op, " : ", err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"INVALID_REQUEST": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": map[string]interface{}{
+				"code":    "INVALID_REQUEST",
+				"message": "Invalid request body",
+			},
+		})
 		return
 	}
 
 	pr, err := h.service.MergePullRequest(request.PullRequestID)
 	if err != nil {
 		if errors.Is(err, models.ErrPRNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"NOT_FOUND": "PR not found"})
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": map[string]interface{}{
+					"code":    "NOT_FOUND",
+					"message": "PR not found",
+				},
+			})
 			return
 		}
 		h.log.Error(op, " : ", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"INTERNAL_ERROR": "Internal server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": map[string]interface{}{
+				"code":    "INTERNAL_ERROR",
+				"message": "Internal server error",
+			},
+		})
 		return
 	}
 
@@ -105,30 +140,61 @@ func (h *PullRequestController) ReassignPullRequest(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		h.log.Error(op, " : ", err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"INVALID_REQUEST": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": map[string]interface{}{
+				"code":    "INVALID_REQUEST",
+				"message": "Invalid request body",
+			},
+		})
 		return
 	}
 
-	result, err := h.service.ReassignReviewer(request.PullRequestID, request.OldUserID)
+	pr, err := h.service.ReassignReviewer(request.PullRequestID, request.OldUserID)
+	replacedBy := request.OldUserID
 	if err != nil {
 		switch {
 		case errors.Is(err, models.ErrPRNotFound) || errors.Is(err, models.ErrUserNotFound):
-			c.JSON(http.StatusNotFound, gin.H{"NOT_FOUND": "PR or user not found"})
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": map[string]interface{}{
+					"code":    "NOT_FOUND",
+					"message": "PR or user not found",
+				},
+			})
 		case errors.Is(err, models.ErrPRMerged):
-			c.JSON(http.StatusConflict, gin.H{"PR_MERGED": "cannot reassign on merged PR"})
+			c.JSON(http.StatusConflict, gin.H{
+				"error": map[string]interface{}{
+					"code":    "PR_MERGED",
+					"message": "cannot reassign on merged PR",
+				},
+			})
 		case errors.Is(err, models.ErrNotAssigned):
-			c.JSON(http.StatusConflict, gin.H{"NOT_ASSIGNED": "reviewer is not assigned to this PR"})
+			c.JSON(http.StatusConflict, gin.H{
+				"error": map[string]interface{}{
+					"code":    "NOT_ASSIGNED",
+					"message": "reviewer is not assigned to this PR",
+				},
+			})
 		case errors.Is(err, models.ErrNoCandidate):
-			c.JSON(http.StatusConflict, gin.H{"NO_CANDIDATE": "no active replacement candidate in team"})
+			c.JSON(http.StatusConflict, gin.H{
+				"error": map[string]interface{}{
+					"code":    "NO_CANDIDATE",
+					"message": "no active replacement candidate in team",
+				},
+			})
 		default:
 			h.log.Error(op, " : ", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"INTERNAL_ERROR": "Internal server error"})
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": map[string]interface{}{
+					"code":    "INTERNAL_ERROR",
+					"message": "Internal server error",
+				},
+			})
 		}
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"pr":          result.PR,
-		"replaced_by": result.NewReviewerID,
+		"pr":          pr,
+		"replaced_by": replacedBy,
 	})
 }

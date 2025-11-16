@@ -25,8 +25,8 @@ func CreateTeamController(service teamService, router *gin.Engine, log *slog.Log
 }
 
 func (h *TeamController) EnableController() {
-	h.router.GET("/team/get/:team_name", h.TeamGet)
-	h.router.GET("/team/add", h.CreateTeam)
+	h.router.GET("/team/get", h.TeamGet)
+	h.router.POST("/team/add", h.CreateTeam)
 }
 
 func (h *TeamController) CreateTeam(c *gin.Context) {
@@ -35,8 +35,12 @@ func (h *TeamController) CreateTeam(c *gin.Context) {
 	var request models.Team
 	if err := c.ShouldBindJSON(&request); err != nil {
 		h.log.Error(op, " : ", err.Error())
-
-		c.JSON(http.StatusBadRequest, gin.H{"INVALID_REQUEST": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": map[string]interface{}{
+				"code":    "INVALID_REQUEST",
+				"message": "Invalid request body",
+			},
+		})
 		return
 	}
 
@@ -45,10 +49,20 @@ func (h *TeamController) CreateTeam(c *gin.Context) {
 		switch {
 		case errors.Is(err, models.ErrTeamExists):
 			h.log.Error(op, " : ", err.Error())
-			c.JSON(http.StatusBadRequest, gin.H{"TEAM_EXISTS": "team_name already exists"})
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": map[string]interface{}{
+					"code":    "TEAM_EXISTS",
+					"message": "team_name already exists",
+				},
+			})
 		default:
 			h.log.Error(op, " : ", err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"INTERNAL_ERROR": "Internal server error"})
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": map[string]interface{}{
+					"code":    "INTERNAL_ERROR",
+					"message": "Internal server error",
+				},
+			})
 		}
 		return
 	}
@@ -60,22 +74,40 @@ func (h *TeamController) CreateTeam(c *gin.Context) {
 }
 
 func (h *TeamController) TeamGet(c *gin.Context) {
-	if c.Request.Method != "GET" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "must use \"GET\""})
+	const op = "handler.TeamGet"
+
+	teamName := c.Query("team_name")
+	if teamName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": map[string]interface{}{
+				"code":    "INVALID_REQUEST",
+				"message": "team_name is required",
+			},
+		})
 		return
 	}
 
-	teamName := c.Param("team_name")
 	team, err := h.service.GetTeam(teamName)
-	switch err {
-	case nil:
-		c.JSON(http.StatusOK, team)
-	case models.ErrEmptyTeamName:
-		c.JSON(http.StatusBadRequest, gin.H{"error": models.ErrTeamExists.Error()})
-	case models.ErrTeamNotFound:
-		c.JSON(http.StatusNotFound, gin.H{"error": models.ErrTeamNotFound.Error()})
-	default:
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err != nil {
+		if errors.Is(err, models.ErrTeamNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": map[string]interface{}{
+					"code":    "NOT_FOUND",
+					"message": "Team not found",
+				},
+			})
+			return
+		}
+		h.log.Error(op, " : ", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": map[string]interface{}{
+				"code":    "INTERNAL_ERROR",
+				"message": "Internal server error",
+			},
+		})
+		return
 	}
 
+	h.log.Info(op, " : ", "team found", team.Name)
+	c.JSON(http.StatusOK, team)
 }

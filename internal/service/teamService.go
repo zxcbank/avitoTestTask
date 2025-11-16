@@ -95,7 +95,7 @@ func (s *TeamService) GetTeam(teamName string) (*models.Team, error) {
 	team, err := s.storage.GetTeam(teamName)
 
 	if err != nil {
-		s.log.Error(op, " : ", "Error creating team: ", err)
+		s.log.Error(op, " : ", "Error getting team: ", err)
 		if rbErr := tx.Rollback(); rbErr != nil {
 			return nil, fmt.Errorf("%v : rollback error: %v, original error: %w", op, rbErr, err)
 		}

@@ -61,7 +61,7 @@ func (s *PostgresStorage) GetTeam(teamName string) (*models.Team, error) {
 	const op = "storage.postgres.GetTeam"
 
 	if teamName == "" {
-		return nil, fmt.Errorf("%s: %w", op, models.ErrEmptyTeamName)
+		return nil, models.ErrEmptyTeamName
 	}
 
 	exists, err := s.TeamExists(teamName)
@@ -69,7 +69,7 @@ func (s *PostgresStorage) GetTeam(teamName string) (*models.Team, error) {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 	if !exists {
-		return nil, fmt.Errorf("%s: %w", op, models.ErrTeamNotFound)
+		return nil, models.ErrTeamNotFound
 	}
 
 	stmt, err := s.DB.Prepare("SELECT * FROM users WHERE team_name = $1 AND is_active = true")
@@ -109,7 +109,7 @@ func (s *PostgresStorage) TeamExists(teamName string) (bool, error) {
 	const op = "storage.postgres.TeamExists"
 
 	if teamName == "" {
-		return false, fmt.Errorf("%s: %w", op, models.ErrEmptyTeamName)
+		return false, models.ErrEmptyTeamName
 	}
 
 	stmt, err := s.DB.Prepare("SELECT EXISTS(SELECT 1 FROM teams WHERE team_name = $1)")
@@ -126,53 +126,3 @@ func (s *PostgresStorage) TeamExists(teamName string) (bool, error) {
 
 	return exists, nil
 }
-
-//func (s *PostgresStorage) GetTeamMembers(teamName string) ([]models.User, error) {
-//	const op = "storage.postgres.GetTeamMembers"
-//
-//	stmt, err := s.DB.Prepare("SELECT user_id, username, is_active FROM users WHERE team_name = $1")
-//	if err != nil {
-//		return nil, fmt.Errorf("%s: %w", op, err)
-//	}
-//	defer stmt.Close()
-//
-//	rows, err := stmt.Query(teamName)
-//	if err != nil {
-//		return nil, fmt.Errorf("%s: %w", op, err)
-//	}
-//	defer rows.Close()
-//
-//	var users []models.User
-//	for rows.Next() {
-//		var user models.User
-//		err = rows.Scan(&user.UserId, &user.Username, &user.IsActive)
-//		if err != nil {
-//			return nil, fmt.Errorf("%s: %w", op, err)
-//		}
-//		users = append(users, user)
-//	}
-//
-//	if err = rows.Err(); err != nil {
-//		return nil, fmt.Errorf("%s: %w", op, err)
-//	}
-//
-//	return users, nil
-//}
-
-//
-//func (s *PostgresStorage) UpdateUserTeam(userID, teamName string) error {
-//	const op = "storage.postgres.UpdateUserTeam"
-//
-//	stmt, err := s.DB.Prepare("UPDATE users SET team_name = $1 WHERE user_id = $2")
-//	if err != nil {
-//		return fmt.Errorf("%s: %w", op, err)
-//	}
-//	defer stmt.Close()
-//
-//	_, err = stmt.Exec(teamName, userID)
-//	if err != nil {
-//		return fmt.Errorf("%s: %w", op, err)
-//	}
-//
-//	return nil
-//}

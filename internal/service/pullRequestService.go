@@ -24,27 +24,27 @@ func CreatePullRequestService(storage pullRequestStorage, log *slog.Logger) Pull
 	return PullRequestService{storage: storage, log: log}
 }
 
-func (s *PullRequestService) CreatePullRequest(PullRequestId, PullRequestName, AuthorID string) (models.PullRequest, error) {
+func (s *PullRequestService) CreatePullRequest(PullRequestId, PullRequestName, AuthorID string) (*models.PullRequest, error) {
 	const op = "internal.service.CreatePullRequest"
 
 	if PullRequestId == "" {
 		s.log.Error(op, " : ", "PullRequest ID is empty")
-		return models.PullRequest{}, models.ErrEmptyPullRequestId
+		return &models.PullRequest{}, models.ErrEmptyPullRequestId
 	}
 	if PullRequestName == "" {
 		s.log.Error(op, " : ", "PullRequest name is empty")
-		return models.PullRequest{}, models.ErrEmptyPullRequestName
+		return &models.PullRequest{}, models.ErrEmptyPullRequestName
 	}
 	if AuthorID == "" {
 		s.log.Error(op, " : ", "Author ID is empty")
-		return models.PullRequest{}, models.ErrEmptyPullRequestAutorId
+		return &models.PullRequest{}, models.ErrEmptyPullRequestAutorId
 	}
 
 	db := s.storage.GetDB()
 	tx, err := db.Begin()
 	if err != nil {
 		s.log.Error(op, " : ", "Error starting transaction")
-		return models.PullRequest{}, fmt.Errorf("begin transaction: %w", err)
+		return &models.PullRequest{}, fmt.Errorf("begin transaction: %w", err)
 	}
 
 	defer func() {
@@ -58,21 +58,21 @@ func (s *PullRequestService) CreatePullRequest(PullRequestId, PullRequestName, A
 	if err != nil {
 		s.log.Error(op, " : ", "Error creating pull request: ", err)
 		if rbErr := tx.Rollback(); rbErr != nil {
-			return models.PullRequest{}, fmt.Errorf("%v : rollback error: %v, original error: %w", op, rbErr, err)
+			return &models.PullRequest{}, fmt.Errorf("%v : rollback error: %v, original error: %w", op, rbErr, err)
 		}
-		return models.PullRequest{}, err
+		return &models.PullRequest{}, err
 	}
 
 	if err = tx.Commit(); err != nil {
 		s.log.Error(op, " : ", "commit error: ", err)
-		return models.PullRequest{}, err
+		return &models.PullRequest{}, err
 	}
 
 	s.log.Info(op, " : ", "Pull request created",
 		"pull_request_id", PullRequestId,
 		"pull_request_name", PullRequestName,
 		"author_id", AuthorID)
-	return pr, nil
+	return &pr, nil
 }
 
 func (s *PullRequestService) GetPullRequest(PullRequestName string) (*models.PullRequest, error) {
@@ -162,23 +162,23 @@ func (s *PullRequestService) MergePullRequest(PullRequestID string) (*models.Pul
 	return pr, nil
 }
 
-func (s *PullRequestService) ReassignReviewer(PullRequestID, OldUserId string) (models.Reassign, error) {
+func (s *PullRequestService) ReassignReviewer(PullRequestID, OldUserId string) (*models.Reassign, error) {
 	const op = "internal.service.ReassignReviewer"
 
 	if PullRequestID == "" {
 		s.log.Error(op, " : ", "PullRequest ID is empty")
-		return models.Reassign{}, models.ErrEmptyPullRequestId
+		return &models.Reassign{}, models.ErrEmptyPullRequestId
 	}
 	if OldUserId == "" {
 		s.log.Error(op, " : ", "Old user ID is empty")
-		return models.Reassign{}, models.ErrEmptyOldUserId
+		return &models.Reassign{}, models.ErrEmptyOldUserId
 	}
 
 	db := s.storage.GetDB()
 	tx, err := db.Begin()
 	if err != nil {
 		s.log.Error(op, " : ", "Error starting transaction")
-		return models.Reassign{}, fmt.Errorf("begin transaction: %w", err)
+		return &models.Reassign{}, fmt.Errorf("begin transaction: %w", err)
 	}
 
 	defer func() {
@@ -192,19 +192,19 @@ func (s *PullRequestService) ReassignReviewer(PullRequestID, OldUserId string) (
 	if err != nil {
 		s.log.Error(op, " : ", "Error reassigning reviewer: ", err)
 		if rbErr := tx.Rollback(); rbErr != nil {
-			return models.Reassign{}, fmt.Errorf("%v : rollback error: %v, original error: %w", op, rbErr, err)
+			return &models.Reassign{}, fmt.Errorf("%v : rollback error: %v, original error: %w", op, rbErr, err)
 		}
-		return models.Reassign{}, err
+		return &models.Reassign{}, err
 	}
 
 	if err = tx.Commit(); err != nil {
 		s.log.Error(op, " : ", "commit error: ", err)
-		return models.Reassign{}, err
+		return &models.Reassign{}, err
 	}
 
 	s.log.Info(op, " : ", "Reviewer reassigned",
 		"pull_request_id", PullRequestID,
 		"old_user_id", OldUserId,
 		"new_user_id", reassign.NewReviewerID)
-	return reassign, nil
+	return &reassign, nil
 }
