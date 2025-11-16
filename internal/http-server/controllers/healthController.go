@@ -13,7 +13,7 @@ type HealthController struct {
 	log    *slog.Logger
 }
 
-func NewHealthController(router *gin.Engine, log *slog.Logger) *HealthController {
+func CreateHealthController(router *gin.Engine, log *slog.Logger) *HealthController {
 	return &HealthController{router: router, log: log}
 }
 

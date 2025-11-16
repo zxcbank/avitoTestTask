@@ -3,15 +3,17 @@ package Postgres
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
 
 	_ "github.com/lib/pq"
 )
 
 type PostgresStorage struct {
-	DB *sql.DB
+	DB  *sql.DB
+	Log *slog.Logger
 }
 
-func NewPostgresStorage(storagePath string) (*PostgresStorage, error) {
+func NewPostgresStorage(storagePath string, log *slog.Logger) (*PostgresStorage, error) {
 	const op = "internal.storage.NewPostgresStorage"
 
 	db, err := sql.Open("postgres", storagePath)
@@ -20,7 +22,7 @@ func NewPostgresStorage(storagePath string) (*PostgresStorage, error) {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return &PostgresStorage{DB: db}, nil
+	return &PostgresStorage{DB: db, Log: log}, nil
 }
 
 func (s *PostgresStorage) GetDB() *sql.DB {

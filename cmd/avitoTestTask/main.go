@@ -2,12 +2,13 @@ package main
 
 import (
 	"avitoTestTask/internal/config"
-	"avitoTestTask/internal/storage"
+	controllers "avitoTestTask/internal/http-server/controllers"
+	"avitoTestTask/internal/service"
+	dao "avitoTestTask/internal/storage/Postgres"
 	"log/slog"
 	"os"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -24,15 +25,34 @@ func main() {
 	log.Debug("debug messages are enabled")
 	log.Error("error messages are enabled")
 
-	teamStorage, err := storage.NewTeamStorage(cfg.StoragePath)
-	userStorage, err := storage.NewUserStorage(cfg.StoragePath)
-	prStorage, err := storage.NewPullRequestStorage(cfg.StoragePath)
-	reviewerStorage, err := storage.NewReviewerStorage(cfg.StoragePath)
+	// делаем слой для работы с БД
+	Storage, err := dao.NewPostgresStorage(cfg.StoragePath, log)
 
 	if err != nil {
 		log.Error("error creating storage", err)
 		os.Exit(1)
 	}
+
+	// делаем сервисный слой
+	teamService := service.CreateTeamService(Storage, log)
+	userService := service.CreateUserService(Storage, log)
+	pullRequestService := service.CreatePullRequestService(Storage, log)
+
+	// делаем хэндлеры
+	router := gin.Default()
+	teamHandler := controllers.CreateTeamController(&teamService, router, log)
+	userHandler := controllers.CreateUserController(&userService, router, log)
+	pullRequestHandler := controllers.CreatePullRequestController(&pullRequestService, router, log)
+	healthHandler := controllers.CreateHealthController(router, log)
+
+	// Включаем хэндлеры
+	teamHandler.EnableController()
+	userHandler.EnableController()
+	pullRequestHandler.EnableController()
+	healthHandler.EnableController()
+
+	// Запускаем роутер
+	router.Run()
 
 }
 
@@ -46,7 +66,7 @@ func setupLogger(env string) *slog.Logger {
 		log = slog.New(
 			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
 		)
-	default: // If env config is invalid, set prod settings by default due to security
+	default:
 		log = slog.New(
 			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
 		)

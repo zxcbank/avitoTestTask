@@ -17,7 +17,7 @@ type UserController struct {
 
 type userService interface {
 	GetUserReviewPRs(userId string) ([]*models.PullRequest, error)
-	SetUserActive(userId string, isActive bool) (models.User, error)
+	SetUserActive(userId string, isActive bool) (*models.User, error)
 }
 
 func CreateUserController(service userService, router *gin.Engine, log *slog.Logger) UserController {
